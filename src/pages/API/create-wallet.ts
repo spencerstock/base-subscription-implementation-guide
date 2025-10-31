@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { base } from '@base-org/account/node';
 
-const WALLET_NAME = 'subscription-playground-v1';
+const DEFAULT_WALLET_NAME = 'subscription-playground-v1';
 
 export default async function handler(
   req: NextApiRequest,
@@ -12,12 +12,16 @@ export default async function handler(
   }
 
   try {
+    // Get walletName from request body, fallback to default
+    const { walletName } = req.body;
+    const finalWalletName = walletName || DEFAULT_WALLET_NAME;
+
     // Get or create a CDP smart wallet to act as the subscription owner
     const owner = await base.subscription.getOrCreateSubscriptionOwnerWallet({
       cdpApiKeyId: process.env.CDP_API_KEY_ID,
       cdpApiKeySecret: process.env.CDP_API_KEY_SECRET,
       cdpWalletSecret: process.env.CDP_WALLET_SECRET,
-      walletName: WALLET_NAME,
+      walletName: finalWalletName,
     });
     
     // Return the smart wallet address
@@ -34,5 +38,3 @@ export default async function handler(
     });
   }
 }
-
-

@@ -41,8 +41,13 @@ export default function Home() {
 
   // Shared state
   const [subscriptionOwnerWallet, setSubscriptionOwnerWallet] = useState<string>('');
+  const [walletName, setWalletName] = useState<string>('');
   const [subscriptionId, setSubscriptionId] = useState<string>('');
   const [showEnvSetup, setShowEnvSetup] = useState(true);
+  
+  // Transfer control flags
+  const [isWalletSentToFrontend, setIsWalletSentToFrontend] = useState(false);
+  const [isSubscriptionIdSentToBackend, setIsSubscriptionIdSentToBackend] = useState(false);
 
   // Code execution hooks
   const beGetOrCreateWalletExecution = useCodeExecution();
@@ -69,8 +74,8 @@ export default function Home() {
       'no-balance-check': SUBSCRIBE_NO_BALANCE_CHECK_CODE,
     };
     const newCode = presetMap[subscribePreset];
-    // Preserve subscriptionOwner if it's been set
-    if (subscriptionOwnerWallet && subscriptionOwnerWallet !== "0xYourAppAddress") {
+    // Preserve subscriptionOwner if it's been sent to frontend
+    if (isWalletSentToFrontend && subscriptionOwnerWallet && subscriptionOwnerWallet !== "0xYourAppAddress") {
       setFeSubscribeCode(newCode.replace(
         /subscriptionOwner:\s*["'][^"']*["']/,
         `subscriptionOwner: "${subscriptionOwnerWallet}"`
@@ -78,7 +83,7 @@ export default function Home() {
     } else {
       setFeSubscribeCode(newCode);
     }
-  }, [subscribePreset, subscriptionOwnerWallet]);
+  }, [subscribePreset, subscriptionOwnerWallet, isWalletSentToFrontend]);
 
   // Handle charge preset changes
   useEffect(() => {
@@ -87,17 +92,24 @@ export default function Home() {
       'with-recipient': CHARGE_WITH_RECIPIENT_CODE,
       'max-remaining': CHARGE_MAX_REMAINING_CODE,
     };
-    const newCode = presetMap[chargePreset];
-    // Preserve subscription ID if it's been set
-    if (subscriptionId && subscriptionId !== "0x...") {
-      setBeChargeCode(newCode.replace(
+    let newCode = presetMap[chargePreset];
+    // Preserve subscription ID if it's been sent to backend
+    if (isSubscriptionIdSentToBackend && subscriptionId && subscriptionId !== "0x...") {
+      newCode = newCode.replace(
         /id:\s*["'][^"']*["']/,
         `id: "${subscriptionId}"`
-      ));
-    } else {
-      setBeChargeCode(newCode);
+      );
+      
+      // Also preserve walletName if it exists
+      if (walletName) {
+        newCode = newCode.replace(
+          /testnet:\s*true/,
+          `walletName: "${walletName}",\n    testnet: true`
+        );
+      }
     }
-  }, [chargePreset, subscriptionId]);
+    setBeChargeCode(newCode);
+  }, [chargePreset, subscriptionId, walletName, isSubscriptionIdSentToBackend]);
 
   // Watch for wallet creation
   useEffect(() => {
@@ -108,6 +120,11 @@ export default function Home() {
     ) {
       const address = beGetOrCreateWalletExecution.result.address as string;
       setSubscriptionOwnerWallet(address);
+      
+      // Extract walletName if present
+      if ('walletName' in beGetOrCreateWalletExecution.result && beGetOrCreateWalletExecution.result.walletName) {
+        setWalletName(beGetOrCreateWalletExecution.result.walletName as string);
+      }
     }
   }, [beGetOrCreateWalletExecution.result]);
 
@@ -141,10 +158,11 @@ try {
   // Pass subscription owner wallet to frontend
   const handlePassWalletToFrontend = () => {
     if (!subscriptionOwnerWallet) {
-      alert('Please enter a subscription owner wallet address first');
+      alert('Enter a subscription owner wallet address first');
       return;
     }
     
+    setIsWalletSentToFrontend(true);
     const updatedCode = feSubscribeCode.replace(
       /subscriptionOwner:\s*["'][^"']*["']/,
       `subscriptionOwner: "${subscriptionOwnerWallet}"`
@@ -155,15 +173,25 @@ try {
   // Pass subscription ID to backend
   const handlePassIdToBackend = () => {
     if (!subscriptionId) {
-      alert('Please create a subscription first');
+      alert('Create a subscription first');
       return;
     }
     
+    setIsSubscriptionIdSentToBackend(true);
+    
     // Update BE charge code
-    const updatedChargeCode = beChargeCode.replace(
+    let updatedChargeCode = beChargeCode.replace(
       /id:\s*["'][^"']*["']/,
       `id: "${subscriptionId}"`
     );
+    
+    // Add walletName if present
+    if (walletName) {
+      updatedChargeCode = updatedChargeCode.replace(
+        /testnet:\s*true/,
+        `walletName: "${walletName}",\n    testnet: true`
+      );
+    }
     setBeChargeCode(updatedChargeCode);
     
     // Update BE getStatus code
@@ -174,10 +202,18 @@ try {
     setBeGetStatusCode(updatedStatusCode);
     
     // Update BE revoke code
-    const updatedRevokeCode = beRevokeCode.replace(
+    let updatedRevokeCode = beRevokeCode.replace(
       /id:\s*["'][^"']*["']/,
       `id: "${subscriptionId}"`
     );
+    
+    // Add walletName if present
+    if (walletName) {
+      updatedRevokeCode = updatedRevokeCode.replace(
+        /testnet:\s*true/,
+        `walletName: "${walletName}",\n    testnet: true`
+      );
+    }
     setBeRevokeCode(updatedRevokeCode);
   };
 
@@ -341,10 +377,10 @@ PAYMASTER_URL=https://api.developer.coinbase.com/rpc/v1/base/*******************
           </div>
         </div>
 
-        {/* Step Setup: Pass Wallet to Frontend */}
+        {/* Step 1: Pass Wallet to Frontend */}
         <div className={styles.stepRow}>
           <div className={styles.stepLabel}>
-            <div className={styles.stepNumber}>Setup</div>
+            <div className={styles.stepNumber}>1</div>
             <div className={styles.stepInfo}>
               <h3 className={styles.stepTitle}>Pass Wallet to Frontend</h3>
               <p className={styles.stepDescription}>Send wallet address from backend to frontend</p>
@@ -353,13 +389,20 @@ PAYMASTER_URL=https://api.developer.coinbase.com/rpc/v1/base/*******************
           
           <div className={styles.splitContent}>
             <div className={styles.frontendColumn}>
-              {subscriptionOwnerWallet ? (
+              {isWalletSentToFrontend ? (
                 <div className={styles.emptySpace}>
                   <svg className={styles.emptyIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                   </svg>
                   <p>Wallet address received!</p>
                   <code style={{ fontSize: '0.75rem', opacity: 0.7, marginTop: '0.5rem', wordBreak: 'break-all', display: 'block', maxWidth: '300px' }}>{subscriptionOwnerWallet.slice(0, 10)}...{subscriptionOwnerWallet.slice(-8)}</code>
+                </div>
+              ) : subscriptionOwnerWallet ? (
+                <div className={styles.emptySpace}>
+                  <svg className={styles.emptyIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ opacity: 0.5 }}>
+                    <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                  </svg>
+                  <p style={{ opacity: 0.7 }}>Wallet ready - click &quot;Send to Frontend&quot; →</p>
                 </div>
               ) : (
                 <div className={styles.emptySpace}>
@@ -395,10 +438,10 @@ PAYMASTER_URL=https://api.developer.coinbase.com/rpc/v1/base/*******************
           </div>
         </div>
 
-        {/* Step 1: Frontend Subscribe */}
+        {/* Step 2: Frontend Subscribe */}
         <div className={styles.stepRow}>
           <div className={styles.stepLabel}>
-            <div className={`${styles.stepNumber} ${styles.frontend}`}>1</div>
+            <div className={`${styles.stepNumber} ${styles.frontend}`}>2</div>
             <div className={styles.stepInfo}>
               <h3 className={styles.stepTitle}>Request Subscription from User</h3>
               <p className={styles.stepDescription}>User subscribes with <code>base.subscription.subscribe</code></p>
@@ -444,10 +487,10 @@ PAYMASTER_URL=https://api.developer.coinbase.com/rpc/v1/base/*******************
           </div>
         </div>
 
-        {/* Step 2: Frontend Get Status */}
+        {/* Step 3: Frontend Get Status */}
         <div className={styles.stepRow}>
           <div className={styles.stepLabel}>
-            <div className={`${styles.stepNumber} ${styles.frontend}`}>2</div>
+            <div className={`${styles.stepNumber} ${styles.frontend}`}>3</div>
             <div className={styles.stepInfo}>
               <h3 className={styles.stepTitle}>Check Subscription Status</h3>
               <p className={styles.stepDescription}>User checks status with <code>base.subscription.getStatus</code></p>
@@ -480,10 +523,10 @@ PAYMASTER_URL=https://api.developer.coinbase.com/rpc/v1/base/*******************
           </div>
         </div>
 
-        {/* Step 3: Pass ID to Backend */}
+        {/* Step 4: Pass ID to Backend */}
         <div className={styles.stepRow}>
           <div className={styles.stepLabel}>
-            <div className={styles.stepNumber}>3</div>
+            <div className={styles.stepNumber}>4</div>
             <div className={styles.stepInfo}>
               <h3 className={styles.stepTitle}>Pass Subscription ID to Backend</h3>
               <p className={styles.stepDescription}>Send subscription ID from frontend to backend</p>
@@ -513,13 +556,20 @@ PAYMASTER_URL=https://api.developer.coinbase.com/rpc/v1/base/*******************
             </div>
             <div className={styles.verticalDivider}></div>
             <div className={styles.backendColumn}>
-              {subscriptionId ? (
+              {isSubscriptionIdSentToBackend ? (
                 <div className={styles.emptySpace}>
                   <svg className={styles.emptyIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                   </svg>
                   <p>Subscription ID received!</p>
                   <code style={{ fontSize: '0.75rem', opacity: 0.7, marginTop: '0.5rem', wordBreak: 'break-all', display: 'block', maxWidth: '300px' }}>{subscriptionId.slice(0, 20)}...</code>
+                </div>
+              ) : subscriptionId ? (
+                <div className={styles.emptySpace}>
+                  <svg className={styles.emptyIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ opacity: 0.5 }}>
+                    <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                  </svg>
+                  <p style={{ opacity: 0.7 }}>← Subscription ID ready - click &quot;Send to Backend&quot;</p>
                 </div>
               ) : (
                 <div className={styles.emptySpace}>
@@ -533,10 +583,10 @@ PAYMASTER_URL=https://api.developer.coinbase.com/rpc/v1/base/*******************
           </div>
         </div>
 
-        {/* Step 4: Backend Charge */}
+        {/* Step 5: Backend Charge */}
         <div className={styles.stepRow}>
           <div className={styles.stepLabel}>
-            <div className={`${styles.stepNumber} ${styles.backend}`}>4</div>
+            <div className={`${styles.stepNumber} ${styles.backend}`}>5</div>
             <div className={styles.stepInfo}>
               <h3 className={styles.stepTitle}>Charge Subscription</h3>
               <p className={styles.stepDescription}>Backend charges with <code>base.subscription.charge</code></p>
@@ -582,10 +632,10 @@ PAYMASTER_URL=https://api.developer.coinbase.com/rpc/v1/base/*******************
           </div>
         </div>
 
-        {/* Step 5: Backend Get Status */}
+        {/* Step 6: Backend Get Status */}
         <div className={styles.stepRow}>
           <div className={styles.stepLabel}>
-            <div className={`${styles.stepNumber} ${styles.backend}`}>5</div>
+            <div className={`${styles.stepNumber} ${styles.backend}`}>6</div>
             <div className={styles.stepInfo}>
               <h3 className={styles.stepTitle}>Verify Subscription Status</h3>
               <p className={styles.stepDescription}>Backend verifies with <code>base.subscription.getStatus</code></p>
@@ -618,10 +668,10 @@ PAYMASTER_URL=https://api.developer.coinbase.com/rpc/v1/base/*******************
           </div>
         </div>
 
-        {/* Step 6: Backend Revoke */}
+        {/* Step 7: Backend Revoke */}
         <div className={styles.stepRow}>
           <div className={styles.stepLabel}>
-            <div className={`${styles.stepNumber} ${styles.backend}`}>6</div>
+            <div className={`${styles.stepNumber} ${styles.backend}`}>7</div>
             <div className={styles.stepInfo}>
               <h3 className={styles.stepTitle}>Revoke Subscription</h3>
               <p className={styles.stepDescription}>Backend cancels with <code>base.subscription.revoke</code></p>

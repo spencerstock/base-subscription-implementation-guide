@@ -55,6 +55,7 @@ export const useCodeExecution = () => {
                   subscriptionId: options.subscriptionId || options.id,
                   amount: options.amount,
                   recipient: options.recipient,
+                  walletName: options.walletName,
                   testnet: options.testnet,
                 }),
               });
@@ -72,6 +73,7 @@ export const useCodeExecution = () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   subscriptionId: options.subscriptionId || options.id,
+                  walletName: options.walletName,
                   testnet: options.testnet,
                 }),
               });
@@ -87,6 +89,9 @@ export const useCodeExecution = () => {
               const response = await fetch('/api/create-wallet', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  walletName: options?.walletName,
+                }),
               });
               
               if (!response.ok) {

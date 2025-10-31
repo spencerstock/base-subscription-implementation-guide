@@ -24,7 +24,7 @@ export const DEFAULT_FE_SUBSCRIBE_CODE = `import { base } from '@base-org/accoun
 
 try {
   const subscription = await base.subscription.subscribe({
-    recurringCharge: "10.50",
+    recurringCharge: ".1",
     subscriptionOwner: "0xYourAppAddress",
     periodInDays: 30,
     testnet: true
@@ -43,7 +43,7 @@ try {
     recurringCharge: "0.01",
     subscriptionOwner: "0xYourAppAddress",
     periodInDays: 30,
-    overridePeriodInSecondsForTestnet: 300,
+    overridePeriodInSecondsForTestnet: 10,
     testnet: true
   })
   
@@ -57,7 +57,7 @@ export const SUBSCRIBE_NO_BALANCE_CHECK_CODE = `import { base } from '@base-org/
 
 try {
   const subscription = await base.subscription.subscribe({
-    recurringCharge: "10.50",
+    recurringCharge: "5",
     subscriptionOwner: "0xYourAppAddress",
     periodInDays: 30,
     requireBalance: false,

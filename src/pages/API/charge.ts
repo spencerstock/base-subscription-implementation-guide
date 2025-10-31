@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { base } from '@base-org/account/node';
 
-const WALLET_NAME = 'subscription-playground-v1';
+const DEFAULT_WALLET_NAME = 'subscription-playground-v1';
 
 export default async function handler(
   req: NextApiRequest,
@@ -12,20 +12,21 @@ export default async function handler(
   }
 
   try {
-    const { subscriptionId, amount, recipient, testnet = true } = req.body;
+    const { subscriptionId, amount, recipient, walletName, testnet = true } = req.body;
     
     if (!subscriptionId) {
       return res.status(400).json({ error: 'Missing subscriptionId' });
     }
 
     const chargeAmount = amount || '1.00';
+    const finalWalletName = walletName || DEFAULT_WALLET_NAME;
 
     // Build charge options with optional recipient
     const chargeOptions: any = {
       id: subscriptionId,
       amount: chargeAmount,
       testnet,
-      walletName: WALLET_NAME,
+      walletName: finalWalletName,
       cdpApiKeyId: process.env.CDP_API_KEY_ID,
       cdpApiKeySecret: process.env.CDP_API_KEY_SECRET,
       cdpWalletSecret: process.env.CDP_WALLET_SECRET,
@@ -61,5 +62,3 @@ export default async function handler(
     });
   }
 }
-
-
