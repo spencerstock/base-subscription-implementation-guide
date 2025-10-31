@@ -3,9 +3,14 @@ import { CodeEditor } from '../components/CodeEditor';
 import { Output } from '../components/Output';
 import {
   DEFAULT_BE_GET_OR_CREATE_WALLET_CODE,
+  WALLET_WITH_CUSTOM_NAME_CODE,
   DEFAULT_FE_SUBSCRIBE_CODE,
+  SUBSCRIBE_FAST_TESTING_CODE,
+  SUBSCRIBE_NO_BALANCE_CHECK_CODE,
   DEFAULT_FE_GET_STATUS_CODE,
   DEFAULT_BE_CHARGE_CODE,
+  CHARGE_WITH_RECIPIENT_CODE,
+  CHARGE_MAX_REMAINING_CODE,
   DEFAULT_BE_GET_STATUS_CODE,
   DEFAULT_BE_REVOKE_CODE,
   BE_GET_OR_CREATE_WALLET_TIPS,
@@ -21,13 +26,16 @@ import styles from '../styles/Home.module.css';
 export default function Home() {
   // Backend wallet state
   const [beGetOrCreateWalletCode, setBeGetOrCreateWalletCode] = useState(DEFAULT_BE_GET_OR_CREATE_WALLET_CODE);
+  const [walletPreset, setWalletPreset] = useState<'default' | 'custom-name'>('default');
   
   // Frontend state
   const [feSubscribeCode, setFeSubscribeCode] = useState(DEFAULT_FE_SUBSCRIBE_CODE);
+  const [subscribePreset, setSubscribePreset] = useState<'default' | 'fast-testing' | 'no-balance-check'>('default');
   const [feGetStatusCode, setFeGetStatusCode] = useState(DEFAULT_FE_GET_STATUS_CODE);
   
   // Backend state
   const [beChargeCode, setBeChargeCode] = useState(DEFAULT_BE_CHARGE_CODE);
+  const [chargePreset, setChargePreset] = useState<'default' | 'with-recipient' | 'max-remaining'>('default');
   const [beGetStatusCode, setBeGetStatusCode] = useState(DEFAULT_BE_GET_STATUS_CODE);
   const [beRevokeCode, setBeRevokeCode] = useState(DEFAULT_BE_REVOKE_CODE);
 
@@ -43,6 +51,53 @@ export default function Home() {
   const beChargeExecution = useCodeExecution();
   const beGetStatusExecution = useCodeExecution();
   const beRevokeExecution = useCodeExecution();
+
+  // Handle wallet preset changes
+  useEffect(() => {
+    const presetMap = {
+      'default': DEFAULT_BE_GET_OR_CREATE_WALLET_CODE,
+      'custom-name': WALLET_WITH_CUSTOM_NAME_CODE,
+    };
+    setBeGetOrCreateWalletCode(presetMap[walletPreset]);
+  }, [walletPreset]);
+
+  // Handle subscribe preset changes
+  useEffect(() => {
+    const presetMap = {
+      'default': DEFAULT_FE_SUBSCRIBE_CODE,
+      'fast-testing': SUBSCRIBE_FAST_TESTING_CODE,
+      'no-balance-check': SUBSCRIBE_NO_BALANCE_CHECK_CODE,
+    };
+    const newCode = presetMap[subscribePreset];
+    // Preserve subscriptionOwner if it's been set
+    if (subscriptionOwnerWallet && subscriptionOwnerWallet !== "0xYourAppAddress") {
+      setFeSubscribeCode(newCode.replace(
+        /subscriptionOwner:\s*["'][^"']*["']/,
+        `subscriptionOwner: "${subscriptionOwnerWallet}"`
+      ));
+    } else {
+      setFeSubscribeCode(newCode);
+    }
+  }, [subscribePreset, subscriptionOwnerWallet]);
+
+  // Handle charge preset changes
+  useEffect(() => {
+    const presetMap = {
+      'default': DEFAULT_BE_CHARGE_CODE,
+      'with-recipient': CHARGE_WITH_RECIPIENT_CODE,
+      'max-remaining': CHARGE_MAX_REMAINING_CODE,
+    };
+    const newCode = presetMap[chargePreset];
+    // Preserve subscription ID if it's been set
+    if (subscriptionId && subscriptionId !== "0x...") {
+      setBeChargeCode(newCode.replace(
+        /id:\s*["'][^"']*["']/,
+        `id: "${subscriptionId}"`
+      ));
+    } else {
+      setBeChargeCode(newCode);
+    }
+  }, [chargePreset, subscriptionId]);
 
   // Watch for wallet creation
   useEffect(() => {
@@ -71,13 +126,12 @@ export default function Home() {
 
 try {
   const result = await base.subscription.getStatus({
-    id: '${subId}', // Auto-filled from subscription
+    id: '${subId}',
     testnet: true
   })
   
   return result;
 } catch (error) {
-  console.error('Failed to check subscription status:', error.message);
   throw error;
 }`;
       setFeGetStatusCode(updatedFeCode);
@@ -107,8 +161,8 @@ try {
     
     // Update BE charge code
     const updatedChargeCode = beChargeCode.replace(
-      /subscriptionId:\s*["'][^"']*["']/,
-      `subscriptionId: "${subscriptionId}"`
+      /id:\s*["'][^"']*["']/,
+      `id: "${subscriptionId}"`
     );
     setBeChargeCode(updatedChargeCode);
     
@@ -121,8 +175,8 @@ try {
     
     // Update BE revoke code
     const updatedRevokeCode = beRevokeCode.replace(
-      /subscriptionId:\s*["'][^"']*["']/,
-      `subscriptionId: "${subscriptionId}"`
+      /id:\s*["'][^"']*["']/,
+      `id: "${subscriptionId}"`
     );
     setBeRevokeCode(updatedRevokeCode);
   };
@@ -130,7 +184,7 @@ try {
   return (
     <div className={styles.container}>
       <header className={styles.header}>
-        <h1 className={styles.title}>Subscription Playground</h1>
+        <h1 className={styles.title}>Base Subscription Integration Guide</h1>
         <p className={styles.subtitle}>
           Follow the steps to explore Frontend and Backend subscription controls
         </p>
@@ -231,6 +285,7 @@ PAYMASTER_URL=https://api.developer.coinbase.com/rpc/v1/base/*******************
           <h2 className={styles.columnTitle}>Frontend</h2>
           <p className={styles.columnSubtitle}>Client-Side Operations</p>
         </div>
+        <div className={styles.columnDivider}></div>
         <div className={styles.columnHeader}>
           <h2 className={styles.columnTitle}>Backend</h2>
           <p className={styles.columnSubtitle}>Server-Side Operations</p>
@@ -250,20 +305,27 @@ PAYMASTER_URL=https://api.developer.coinbase.com/rpc/v1/base/*******************
           
           <div className={styles.splitContent}>
             <div className={styles.frontendColumn}>
-              <div className={styles.emptySpace}>
-                <svg className={styles.emptyIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
-                </svg>
-                <p>Backend operation only</p>
-              </div>
             </div>
+            <div className={styles.verticalDivider}></div>
             <div className={styles.backendColumn}>
+              <div className={styles.presetSelector}>
+                <span className={styles.presetLabel}>Example:</span>
+                <select 
+                  className={styles.presetSelect}
+                  value={walletPreset}
+                  onChange={(e) => setWalletPreset(e.target.value as 'default' | 'custom-name')}
+                >
+                  <option value="default">Basic Wallet</option>
+                  <option value="custom-name">With Custom Name</option>
+                </select>
+              </div>
               <CodeEditor
                 code={beGetOrCreateWalletCode}
                 onChange={setBeGetOrCreateWalletCode}
                 onExecute={() => beGetOrCreateWalletExecution.executeCode(beGetOrCreateWalletCode)}
                 onReset={() => {
                   setBeGetOrCreateWalletCode(DEFAULT_BE_GET_OR_CREATE_WALLET_CODE);
+                  setWalletPreset('default');
                   beGetOrCreateWalletExecution.reset();
                 }}
                 isLoading={beGetOrCreateWalletExecution.isLoading}
@@ -285,12 +347,32 @@ PAYMASTER_URL=https://api.developer.coinbase.com/rpc/v1/base/*******************
             <div className={styles.stepNumber}>Setup</div>
             <div className={styles.stepInfo}>
               <h3 className={styles.stepTitle}>Pass Wallet to Frontend</h3>
-              <p className={styles.stepDescription}>Copy wallet address to subscribe function</p>
+              <p className={styles.stepDescription}>Send wallet address from backend to frontend</p>
             </div>
           </div>
           
           <div className={styles.splitContent}>
             <div className={styles.frontendColumn}>
+              {subscriptionOwnerWallet ? (
+                <div className={styles.emptySpace}>
+                  <svg className={styles.emptyIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  <p>Wallet address received!</p>
+                  <code style={{ fontSize: '0.75rem', opacity: 0.7, marginTop: '0.5rem', wordBreak: 'break-all', display: 'block', maxWidth: '300px' }}>{subscriptionOwnerWallet.slice(0, 10)}...{subscriptionOwnerWallet.slice(-8)}</code>
+                </div>
+              ) : (
+                <div className={styles.emptySpace}>
+                  <svg className={styles.emptyIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  <p>Waiting for wallet address...</p>
+                </div>
+              )}
+            </div>
+            <div className={styles.verticalDivider}></div>
+            <div className={styles.backendColumn}>
               <div className={styles.setupPanel}>
                 <div className={styles.inputGroup}>
                   <label className={styles.inputLabel}>Backend Wallet Address</label>
@@ -304,18 +386,10 @@ PAYMASTER_URL=https://api.developer.coinbase.com/rpc/v1/base/*******************
                 </div>
                 <button onClick={handlePassWalletToFrontend} className={styles.passButton}>
                   <svg className={styles.buttonIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                    <path d="M11 17l-5-5m0 0l5-5m-5 5h18"/>
                   </svg>
-                  Pass to Step 1
+                  <span>Send to Frontend</span>
                 </button>
-              </div>
-            </div>
-            <div className={styles.backendColumn}>
-              <div className={styles.emptySpace}>
-                <svg className={styles.emptyIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                <p>Wallet created!</p>
               </div>
             </div>
           </div>
@@ -333,12 +407,25 @@ PAYMASTER_URL=https://api.developer.coinbase.com/rpc/v1/base/*******************
           
           <div className={styles.splitContent}>
             <div className={styles.frontendColumn}>
+              <div className={styles.presetSelector}>
+                <span className={styles.presetLabel}>Example:</span>
+                <select 
+                  className={styles.presetSelect}
+                  value={subscribePreset}
+                  onChange={(e) => setSubscribePreset(e.target.value as 'default' | 'fast-testing' | 'no-balance-check')}
+                >
+                  <option value="default">Basic Subscribe (30 days)</option>
+                  <option value="fast-testing">Fast Testing (5 minutes) ⚡</option>
+                  <option value="no-balance-check">Skip Balance Check</option>
+                </select>
+              </div>
               <CodeEditor
                 code={feSubscribeCode}
                 onChange={setFeSubscribeCode}
                 onExecute={() => feSubscribeExecution.executeCode(feSubscribeCode)}
                 onReset={() => {
                   setFeSubscribeCode(DEFAULT_FE_SUBSCRIBE_CODE);
+                  setSubscribePreset('default');
                   feSubscribeExecution.reset();
                 }}
                 isLoading={feSubscribeExecution.isLoading}
@@ -351,16 +438,8 @@ PAYMASTER_URL=https://api.developer.coinbase.com/rpc/v1/base/*******************
                 isLoading={feSubscribeExecution.isLoading}
               />
             </div>
+            <div className={styles.verticalDivider}></div>
             <div className={styles.backendColumn}>
-              <div className={styles.emptySpace}>
-                <svg className={styles.emptyIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="3" width="7" height="7" />
-                  <rect x="14" y="3" width="7" height="7" />
-                  <rect x="14" y="14" width="7" height="7" />
-                  <rect x="3" y="14" width="7" height="7" />
-                </svg>
-                <p>Frontend operation only</p>
-              </div>
             </div>
           </div>
         </div>
@@ -395,14 +474,8 @@ PAYMASTER_URL=https://api.developer.coinbase.com/rpc/v1/base/*******************
                 isLoading={feGetStatusExecution.isLoading}
               />
             </div>
+            <div className={styles.verticalDivider}></div>
             <div className={styles.backendColumn}>
-              <div className={styles.emptySpace}>
-                <svg className={styles.emptyIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M12 16v-4m0-4h.01"/>
-                </svg>
-                <p>Frontend operation only</p>
-              </div>
             </div>
           </div>
         </div>
@@ -413,20 +486,12 @@ PAYMASTER_URL=https://api.developer.coinbase.com/rpc/v1/base/*******************
             <div className={styles.stepNumber}>3</div>
             <div className={styles.stepInfo}>
               <h3 className={styles.stepTitle}>Pass Subscription ID to Backend</h3>
-              <p className={styles.stepDescription}>Send subscription ID to your server</p>
+              <p className={styles.stepDescription}>Send subscription ID from frontend to backend</p>
             </div>
           </div>
           
           <div className={styles.splitContent}>
             <div className={styles.frontendColumn}>
-              <div className={styles.emptySpace}>
-                <svg className={styles.emptyIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                <p>Subscription created!</p>
-              </div>
-            </div>
-            <div className={styles.backendColumn}>
               <div className={styles.setupPanel}>
                 <div className={styles.inputGroup}>
                   <label className={styles.inputLabel}>Subscription ID</label>
@@ -442,9 +507,28 @@ PAYMASTER_URL=https://api.developer.coinbase.com/rpc/v1/base/*******************
                   <svg className={styles.buttonIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M13 7l5 5m0 0l-5 5m5-5H6"/>
                   </svg>
-                  Pass to Backend Steps
+                  <span>Send to Backend</span>
                 </button>
               </div>
+            </div>
+            <div className={styles.verticalDivider}></div>
+            <div className={styles.backendColumn}>
+              {subscriptionId ? (
+                <div className={styles.emptySpace}>
+                  <svg className={styles.emptyIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  <p>Subscription ID received!</p>
+                  <code style={{ fontSize: '0.75rem', opacity: 0.7, marginTop: '0.5rem', wordBreak: 'break-all', display: 'block', maxWidth: '300px' }}>{subscriptionId.slice(0, 20)}...</code>
+                </div>
+              ) : (
+                <div className={styles.emptySpace}>
+                  <svg className={styles.emptyIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                  </svg>
+                  <p>Waiting for subscription ID...</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -461,20 +545,28 @@ PAYMASTER_URL=https://api.developer.coinbase.com/rpc/v1/base/*******************
           
           <div className={styles.splitContent}>
             <div className={styles.frontendColumn}>
-              <div className={styles.emptySpace}>
-                <svg className={styles.emptyIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
-                </svg>
-                <p>Backend operation only</p>
-              </div>
             </div>
+            <div className={styles.verticalDivider}></div>
             <div className={styles.backendColumn}>
+              <div className={styles.presetSelector}>
+                <span className={styles.presetLabel}>Example:</span>
+                <select 
+                  className={styles.presetSelect}
+                  value={chargePreset}
+                  onChange={(e) => setChargePreset(e.target.value as 'default' | 'with-recipient' | 'max-remaining')}
+                >
+                  <option value="default">Basic Charge</option>
+                  <option value="with-recipient">With Recipient Address</option>
+                  <option value="max-remaining">Max Remaining Charge 💰</option>
+                </select>
+              </div>
               <CodeEditor
                 code={beChargeCode}
                 onChange={setBeChargeCode}
                 onExecute={() => beChargeExecution.executeCode(beChargeCode)}
                 onReset={() => {
                   setBeChargeCode(DEFAULT_BE_CHARGE_CODE);
+                  setChargePreset('default');
                   beChargeExecution.reset();
                 }}
                 isLoading={beChargeExecution.isLoading}
@@ -502,13 +594,8 @@ PAYMASTER_URL=https://api.developer.coinbase.com/rpc/v1/base/*******************
           
           <div className={styles.splitContent}>
             <div className={styles.frontendColumn}>
-              <div className={styles.emptySpace}>
-                <svg className={styles.emptyIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-                </svg>
-                <p>Backend operation only</p>
-              </div>
             </div>
+            <div className={styles.verticalDivider}></div>
             <div className={styles.backendColumn}>
               <CodeEditor
                 code={beGetStatusCode}
@@ -543,13 +630,8 @@ PAYMASTER_URL=https://api.developer.coinbase.com/rpc/v1/base/*******************
           
           <div className={styles.splitContent}>
             <div className={styles.frontendColumn}>
-              <div className={styles.emptySpace}>
-                <svg className={styles.emptyIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
-                </svg>
-                <p>Backend operation only</p>
-              </div>
             </div>
+            <div className={styles.verticalDivider}></div>
             <div className={styles.backendColumn}>
               <CodeEditor
                 code={beRevokeCode}
