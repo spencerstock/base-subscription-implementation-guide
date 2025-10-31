@@ -233,6 +233,13 @@ try {
       );
     }
     setBeRevokeCode(updatedRevokeCode);
+    
+    // Update cron code with subscription ID
+    let updatedCronCode = beCronCode.replace(
+      /collectRecurringCharges\(['"][^'"]*['"]\)/,
+      `collectRecurringCharges('${subscriptionId}')`
+    );
+    setBeCronCode(updatedCronCode);
   };
 
   return (
@@ -847,6 +854,7 @@ PAYMASTER_URL=https://api.developer.coinbase.com/rpc/v1/base/*******************
                 error={beCronExecution.error}
                 consoleOutput={beCronExecution.consoleOutput}
                 isLoading={beCronExecution.isLoading}
+                showConsoleOutput={true}
               />
             </div>
           </div>

@@ -6,6 +6,7 @@ interface OutputProps {
   consoleOutput: string[];
   isLoading: boolean;
   code?: string;
+  showConsoleOutput?: boolean;
 }
 
 // Helper to extract transaction hash from result
@@ -39,7 +40,7 @@ const isTestnet = (code?: string): boolean => {
   return true;
 };
 
-export const Output = ({ result, error, consoleOutput, isLoading, code }: OutputProps) => {
+export const Output = ({ result, error, consoleOutput, isLoading, code, showConsoleOutput = false }: OutputProps) => {
   const txHash = getTransactionHash(result);
   const isTestnetTx = isTestnet(code);
   
@@ -70,6 +71,17 @@ export const Output = ({ result, error, consoleOutput, isLoading, code }: Output
       </div>
 
       <div className={styles.outputContent}>
+        {showConsoleOutput && consoleOutput.length > 0 && (
+          <div className={`${styles.resultCard} ${styles.console}`}>
+            <div className={styles.resultHeader}>Console Output</div>
+            <div className={styles.resultBody}>
+              <pre className={styles.consoleOutput}>
+                {consoleOutput.join('\n')}
+              </pre>
+            </div>
+          </div>
+        )}
+
         {error && (
           <div className={`${styles.resultCard} ${styles.error}`}>
             <div className={styles.resultBody}>
@@ -109,7 +121,7 @@ export const Output = ({ result, error, consoleOutput, isLoading, code }: Output
           </>
         )}
 
-        {!result && !error && !isLoading && (
+        {!result && !error && !isLoading && consoleOutput.length === 0 && (
           <div className={styles.emptyState}>
             <svg
               className={styles.emptyIcon}

@@ -17,7 +17,11 @@ export const useCodeExecution = () => {
       setConsoleOutput([]);
 
       const logs: string[] = [];
-      const restoreConsole = captureConsole((message) => logs.push(message));
+      const restoreConsole = captureConsole((message) => {
+        logs.push(message);
+        // Update console output in real-time
+        setConsoleOutput([...logs]);
+      });
 
       try {
         const sanitizationResult = transformAndSanitizeCode(code);

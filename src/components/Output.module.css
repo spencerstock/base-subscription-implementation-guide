@@ -64,12 +64,22 @@
   border-color: rgba(59, 130, 246, 0.3);
 }
 
+.resultCard.console {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
 .resultHeader {
   padding: 0.75rem 1rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .resultCard.success .resultHeader {
@@ -82,6 +92,11 @@
 
 .resultCard.info .resultHeader {
   background: rgba(59, 130, 246, 0.15);
+}
+
+.resultCard.console .resultHeader {
+  background: rgba(139, 92, 246, 0.15);
+  color: #a78bfa;
 }
 
 .resultIcon {
@@ -172,6 +187,22 @@
   border-radius: 4px;
   overflow-x: auto;
   margin: 0;
+}
+
+.consoleOutput {
+  font-family: "SF Mono", Monaco, monospace;
+  font-size: 0.75rem;
+  color: #cbd5e1;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.75rem;
+  border-radius: 4px;
+  overflow-x: auto;
+  max-height: 400px;
+  overflow-y: auto;
+  margin: 0;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .consoleCard {

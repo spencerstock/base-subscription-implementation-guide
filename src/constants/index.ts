@@ -40,7 +40,7 @@ export const SUBSCRIBE_FAST_TESTING_CODE = `import { base } from '@base-org/acco
 
 try {
   const subscription = await base.subscription.subscribe({
-    recurringCharge: "5",
+    recurringCharge: ".01",
     subscriptionOwner: "0xYourAppAddress",
     periodInDays: 30,
     overridePeriodInSecondsForTestnet: 10,
@@ -161,55 +161,75 @@ try {
 export const RECURRING_CHARGE_CRON_CODE = `import { base } from '@base-org/account'
 
 // Rudimentary cron for automatic recurring charges
-async function collectRecurringCharges(subscriptionId) {
-  while (true) {
+async function collectRecurringCharges(subscriptionId, maxCycles = 3) {
+  console.log(\`Starting recurring charge monitor for subscription: \${subscriptionId}\`)
+  console.log(\`Will run for up to \${maxCycles} charge cycles (set maxCycles to null for continuous operation)\`)
+  console.log('---')
+  
+  let cycleCount = 0
+  
+  while (maxCycles === null || cycleCount < maxCycles) {
     try {
+      cycleCount++
+      console.log(\`\\n[Cycle \${cycleCount}] Checking subscription status...\`)
+      
       // Get current subscription status
       const status = await base.subscription.getStatus({
         id: subscriptionId,
         testnet: true
       })
       
+      console.log(\`[Cycle \${cycleCount}] Subscription active: \${status.isSubscribed}\`)
+      console.log(\`[Cycle \${cycleCount}] Remaining charge in period: \${status.remainingChargeInPeriod}\`)
+      
       if (!status.isSubscribed) {
-        console.log('Subscription is no longer active')
+        console.log(\`[Cycle \${cycleCount}] ❌ Subscription is no longer active - stopping monitor\`)
         break
       }
       
       // Calculate time until next period
-      const now = Math.floor(Date.now() / 1000)
+      const now = Date.now()
       const nextPeriodStart = status.nextPeriodStart
-      const secondsUntilNextPeriod = nextPeriodStart - now
+      const millisecondsUntilNextPeriod = nextPeriodStart - now
+      const secondsUntilNextPeriod = Math.floor(millisecondsUntilNextPeriod / 1000)
       
-      if (secondsUntilNextPeriod > 0) {
-        console.log(\`Waiting \${secondsUntilNextPeriod}s until next period...\`)
-        await new Promise(resolve => setTimeout(resolve, secondsUntilNextPeriod * 1000))
+      if (millisecondsUntilNextPeriod > 0) {
+        console.log(\`[Cycle \${cycleCount}] ⏳ Waiting \${secondsUntilNextPeriod}s until next period starts...\`)
+        await new Promise(resolve => setTimeout(resolve, millisecondsUntilNextPeriod))
       }
       
       // Charge for the new period
-      console.log('Charging subscription...')
+      console.log(\`[Cycle \${cycleCount}] 💳 Charging subscription...\`)
       const chargeResult = await base.subscription.charge({
         id: subscriptionId,
         amount: "max-remaining-charge",
         testnet: true
       })
       
-      console.log('Charge successful:', chargeResult.transactionHash)
+      console.log(\`[Cycle \${cycleCount}] ✅ Charge successful!\`)
+      console.log(\`[Cycle \${cycleCount}] Transaction: \${chargeResult.transactionHash}\`)
+      console.log(\`[Cycle \${cycleCount}] Amount charged: \${chargeResult.amount}\`)
       
     } catch (error) {
-      console.error('Error in charge cycle:', error.message)
-      // Wait 1 minute before retrying
+      console.error(\`[Cycle \${cycleCount}] ❌ Error in charge cycle:\`, error.message)
+      console.log(\`[Cycle \${cycleCount}] Waiting 60s before retry...\`)
       await new Promise(resolve => setTimeout(resolve, 60000))
     }
   }
+  
+  if (maxCycles !== null) {
+    console.log(\`\\n✅ Completed \${cycleCount} charge cycles\`)
+  }
+  
+  return {
+    cyclesCompleted: cycleCount,
+    message: 'Charge monitor completed'
+  }
 }
 
-// Example usage (not executed here - just for demonstration)
-// await collectRecurringCharges('0x...')
-
-return { 
-  message: 'Cron pattern example above - adapt this to your backend service',
-  note: 'Use a proper scheduler like node-cron or a cloud function with scheduled triggers in production'
-}`;
+// Execute the cron job
+// Replace '0x...' with actual subscription ID
+return await collectRecurringCharges('0x...')`;
 
 // Quick Tips
 export const BE_GET_OR_CREATE_WALLET_TIPS = [
@@ -254,9 +274,10 @@ export const BE_REVOKE_TIPS = [
 ];
 
 export const RECURRING_CHARGE_CRON_TIPS = [
-  'This pattern automatically charges subscriptions at the start of each new period',
+  'This demo executes automatically and shows real-time output for each charging cycle',
+  'By default, runs for 3 cycles - set maxCycles to null for continuous operation',
+  'Each cycle checks subscription status, waits for the next period, then charges',
   'In production, use a proper scheduler like node-cron, bull queue, or cloud-based schedulers',
-  'Consider adding retry logic and error handling for failed charges',
   'Store subscription IDs in a database and iterate through active subscriptions',
   'Use "max-remaining-charge" to collect the full recurring amount each period',
 ];
