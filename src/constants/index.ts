@@ -157,6 +157,60 @@ try {
   throw error;
 }`;
 
+// Backend Recurring Charge Pattern (Rudimentary Cron)
+export const RECURRING_CHARGE_CRON_CODE = `import { base } from '@base-org/account'
+
+// Rudimentary cron for automatic recurring charges
+async function collectRecurringCharges(subscriptionId) {
+  while (true) {
+    try {
+      // Get current subscription status
+      const status = await base.subscription.getStatus({
+        id: subscriptionId,
+        testnet: true
+      })
+      
+      if (!status.isSubscribed) {
+        console.log('Subscription is no longer active')
+        break
+      }
+      
+      // Calculate time until next period
+      const now = Math.floor(Date.now() / 1000)
+      const nextPeriodStart = status.nextPeriodStart
+      const secondsUntilNextPeriod = nextPeriodStart - now
+      
+      if (secondsUntilNextPeriod > 0) {
+        console.log(\`Waiting \${secondsUntilNextPeriod}s until next period...\`)
+        await new Promise(resolve => setTimeout(resolve, secondsUntilNextPeriod * 1000))
+      }
+      
+      // Charge for the new period
+      console.log('Charging subscription...')
+      const chargeResult = await base.subscription.charge({
+        id: subscriptionId,
+        amount: "max-remaining-charge",
+        testnet: true
+      })
+      
+      console.log('Charge successful:', chargeResult.transactionHash)
+      
+    } catch (error) {
+      console.error('Error in charge cycle:', error.message)
+      // Wait 1 minute before retrying
+      await new Promise(resolve => setTimeout(resolve, 60000))
+    }
+  }
+}
+
+// Example usage (not executed here - just for demonstration)
+// await collectRecurringCharges('0x...')
+
+return { 
+  message: 'Cron pattern example above - adapt this to your backend service',
+  note: 'Use a proper scheduler like node-cron or a cloud function with scheduled triggers in production'
+}`;
+
 // Quick Tips
 export const BE_GET_OR_CREATE_WALLET_TIPS = [
   'This function creates a new wallet or retrieves an existing one',
@@ -197,4 +251,12 @@ export const BE_GET_STATUS_TIPS = [
 export const BE_REVOKE_TIPS = [
   'Once revoked, no more charges can be made',
   'The subscription payer can also revoke from their wallet',
+];
+
+export const RECURRING_CHARGE_CRON_TIPS = [
+  'This pattern automatically charges subscriptions at the start of each new period',
+  'In production, use a proper scheduler like node-cron, bull queue, or cloud-based schedulers',
+  'Consider adding retry logic and error handling for failed charges',
+  'Store subscription IDs in a database and iterate through active subscriptions',
+  'Use "max-remaining-charge" to collect the full recurring amount each period',
 ];

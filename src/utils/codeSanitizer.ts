@@ -65,6 +65,7 @@ export const WHITELIST = {
     'OptionalMemberExpression',
     'OptionalCallExpression',
     'SequenceExpression',
+    'NewExpression',
   ],
 
   // Disallowed global objects and functions
@@ -99,12 +100,7 @@ export const WHITELIST = {
     'module',
     'exports',
     'Buffer',
-    'setInterval',
-    'setTimeout',
     'setImmediate',
-    'clearInterval',
-    'clearTimeout',
-    'clearImmediate',
   ],
 };
 
@@ -244,12 +240,8 @@ export class CodeSanitizer {
         break;
 
       case 'NewExpression':
-        this.errors.push({
-          message: `Constructor calls are not allowed`,
-          line: node.loc?.start.line ? node.loc.start.line - 1 : undefined,
-          column: node.loc?.start.column,
-        });
-        return;
+        this.validateNewExpression(node);
+        break;
     }
 
     // Recursively validate child nodes
@@ -376,6 +368,25 @@ export class CodeSanitizer {
         line: node.loc?.start.line ? node.loc.start.line - 1 : undefined,
         column: node.loc?.start.column,
       });
+    }
+  }
+
+  /**
+   * Validate new expressions (constructor calls)
+   */
+  private validateNewExpression(node: ASTNode): void {
+    // Only allow new Promise() for now
+    const allowedConstructors = ['Promise', 'Date'];
+    
+    if (node.callee?.type === 'Identifier') {
+      const constructorName = node.callee.name;
+      if (!allowedConstructors.includes(constructorName || '')) {
+        this.errors.push({
+          message: `Constructor 'new ${constructorName}()' is not allowed`,
+          line: node.loc?.start.line ? node.loc.start.line - 1 : undefined,
+          column: node.loc?.start.column,
+        });
+      }
     }
   }
 

@@ -13,12 +13,14 @@ import {
   CHARGE_MAX_REMAINING_CODE,
   DEFAULT_BE_GET_STATUS_CODE,
   DEFAULT_BE_REVOKE_CODE,
+  RECURRING_CHARGE_CRON_CODE,
   BE_GET_OR_CREATE_WALLET_TIPS,
   FE_SUBSCRIBE_TIPS,
   FE_GET_STATUS_TIPS,
   BE_CHARGE_TIPS,
   BE_GET_STATUS_TIPS,
   BE_REVOKE_TIPS,
+  RECURRING_CHARGE_CRON_TIPS,
 } from '../constants';
 import { useCodeExecution } from '../hooks/useCodeExecution';
 import styles from '../styles/Home.module.css';
@@ -38,6 +40,7 @@ export default function Home() {
   const [chargePreset, setChargePreset] = useState<'default' | 'with-recipient' | 'max-remaining'>('default');
   const [beGetStatusCode, setBeGetStatusCode] = useState(DEFAULT_BE_GET_STATUS_CODE);
   const [beRevokeCode, setBeRevokeCode] = useState(DEFAULT_BE_REVOKE_CODE);
+  const [beCronCode, setBeCronCode] = useState(RECURRING_CHARGE_CRON_CODE);
 
   // Shared state
   const [subscriptionOwnerWallet, setSubscriptionOwnerWallet] = useState<string>('');
@@ -56,6 +59,7 @@ export default function Home() {
   const beChargeExecution = useCodeExecution();
   const beGetStatusExecution = useCodeExecution();
   const beRevokeExecution = useCodeExecution();
+  const beCronExecution = useCodeExecution();
 
   // Handle wallet preset changes
   useEffect(() => {
@@ -805,6 +809,44 @@ PAYMASTER_URL=https://api.developer.coinbase.com/rpc/v1/base/*******************
                 consoleOutput={beRevokeExecution.consoleOutput}
                 isLoading={beRevokeExecution.isLoading}
                 code={beRevokeCode}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Bonus: Recurring Charge Pattern */}
+        <div className={styles.stepRow}>
+          <div className={styles.stepLabel}>
+            <div className={`${styles.stepNumber} ${styles.backend}`} style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>💡</div>
+            <div className={styles.stepInfo}>
+              <h3 className={styles.stepTitle}>Automatic Recurring Charges (Cron Pattern)</h3>
+              <p className={styles.stepDescription}>
+                Example pattern for automatically collecting charges each period
+              </p>
+            </div>
+          </div>
+          
+          <div className={styles.splitContent}>
+            <div className={styles.frontendColumn}>
+            </div>
+            <div className={styles.verticalDivider}></div>
+            <div className={styles.backendColumn}>
+              <CodeEditor
+                code={beCronCode}
+                onChange={setBeCronCode}
+                onExecute={() => beCronExecution.executeCode(beCronCode)}
+                onReset={() => {
+                  setBeCronCode(RECURRING_CHARGE_CRON_CODE);
+                  beCronExecution.reset();
+                }}
+                isLoading={beCronExecution.isLoading}
+                tips={RECURRING_CHARGE_CRON_TIPS}
+              />
+              <Output
+                result={beCronExecution.result}
+                error={beCronExecution.error}
+                consoleOutput={beCronExecution.consoleOutput}
+                isLoading={beCronExecution.isLoading}
               />
             </div>
           </div>
