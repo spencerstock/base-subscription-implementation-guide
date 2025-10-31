@@ -5,9 +5,51 @@ interface OutputProps {
   error: string | null;
   consoleOutput: string[];
   isLoading: boolean;
+  code?: string;
 }
 
-export const Output = ({ result, error, consoleOutput, isLoading }: OutputProps) => {
+// Helper to extract transaction hash from result
+const getTransactionHash = (result: any): string | null => {
+  if (!result) return null;
+  
+  // Check for transactionHash field (from charge)
+  if (result.transactionHash) {
+    return result.transactionHash;
+  }
+  
+  // Check for revokeResult.id field (from revoke)
+  if (result.revokeResult?.id) {
+    return result.revokeResult.id;
+  }
+  
+  return null;
+};
+
+// Helper to extract testnet flag from code
+const isTestnet = (code?: string): boolean => {
+  if (!code) return true; // default to testnet
+  
+  // Look for testnet: false
+  const testnetFalseMatch = code.match(/testnet:\s*false/);
+  if (testnetFalseMatch) {
+    return false;
+  }
+  
+  // Default to true (testnet)
+  return true;
+};
+
+export const Output = ({ result, error, consoleOutput, isLoading, code }: OutputProps) => {
+  const txHash = getTransactionHash(result);
+  const isTestnetTx = isTestnet(code);
+  
+  const getBlockExplorerUrl = (hash: string) => {
+    const baseUrl = isTestnetTx 
+      ? 'https://sepolia.basescan.org/tx/'
+      : 'https://basescan.org/tx/';
+    return `${baseUrl}${hash}`;
+  };
+
   return (
     <div className={styles.outputPanel}>
       <div className={styles.panelHeader}>
@@ -37,11 +79,34 @@ export const Output = ({ result, error, consoleOutput, isLoading }: OutputProps)
         )}
 
         {!error && result && (
-          <div className={`${styles.resultCard} ${styles.info}`}>
-            <div className={styles.resultBody}>
-              <pre className={styles.jsonOutput}>{JSON.stringify(result, null, 2)}</pre>
+          <>
+            <div className={`${styles.resultCard} ${styles.info}`}>
+              <div className={styles.resultBody}>
+                <pre className={styles.jsonOutput}>{JSON.stringify(result, null, 2)}</pre>
+              </div>
             </div>
-          </div>
+            {txHash && (
+              <a 
+                href={getBlockExplorerUrl(txHash)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.explorerButton}
+              >
+                <svg 
+                  className={styles.explorerIcon}
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2"
+                >
+                  <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+                  <path d="M15 3h6v6"/>
+                  <path d="M10 14L21 3"/>
+                </svg>
+                View on Block Explorer
+              </a>
+            )}
+          </>
         )}
 
         {!result && !error && !isLoading && (

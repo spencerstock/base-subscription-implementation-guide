@@ -349,7 +349,8 @@
   pointer-events: none;
 }
 
-.frontendColumn:has(.passButton:active)::before {
+.frontendColumn:has(.passButton:active)::before,
+.frontendColumn:has(.passButton.animating)::before {
   animation: arrowFlyRight 0.8s ease-out;
 }
 
@@ -398,7 +399,8 @@
   pointer-events: none;
 }
 
-.backendColumn:has(.passButton:active)::before {
+.backendColumn:has(.passButton:active)::before,
+.backendColumn:has(.passButton.animating)::before {
   animation: arrowFlyLeft 0.8s ease-out;
 }
 
@@ -459,7 +461,8 @@
   box-shadow: 0 0 20px #0052ff;
 }
 
-.stepRow:has(.passButton:active) .verticalDivider::after {
+.stepRow:has(.passButton:active) .verticalDivider::after,
+.stepRow:has(.passButton.animating) .verticalDivider::after {
   animation: dividerPulse 0.8s ease-out;
 }
 
@@ -528,7 +531,8 @@
   pointer-events: none;
 }
 
-.setupPanel:has(.passButton:active)::after {
+.setupPanel:has(.passButton:active)::after,
+.setupPanel:has(.passButton.animating)::after {
   animation: dataTransfer 0.8s ease-out;
 }
 
@@ -627,7 +631,8 @@
   box-shadow: 0 0 20px rgba(0, 82, 255, 0.5);
 }
 
-.passButton:active {
+.passButton:active,
+.passButton.animating {
   animation: sendPulse 0.6s ease-out;
 }
 
@@ -701,13 +706,21 @@
 }
 
 /* Receiving animation for the opposite column */
-.frontendColumn:has(~ .backendColumn .passButton:active) .emptySpace,
-.backendColumn:has(~ .frontendColumn .passButton:active) .emptySpace {
+/* When backend sends to frontend */
+.stepRow:has(.backendColumn .passButton:active) .frontendColumn .emptySpace,
+.stepRow:has(.backendColumn .passButton.animating) .frontendColumn .emptySpace,
+/* When frontend sends to backend */
+.stepRow:has(.frontendColumn .passButton:active) .backendColumn .emptySpace,
+.stepRow:has(.frontendColumn .passButton.animating) .backendColumn .emptySpace {
   animation: receiveData 0.8s ease-out 0.4s;
 }
 
-.frontendColumn:has(~ .backendColumn .passButton:active) .emptyIcon,
-.backendColumn:has(~ .frontendColumn .passButton:active) .emptyIcon {
+/* When backend sends to frontend */
+.stepRow:has(.backendColumn .passButton:active) .frontendColumn .emptyIcon,
+.stepRow:has(.backendColumn .passButton.animating) .frontendColumn .emptyIcon,
+/* When frontend sends to backend */
+.stepRow:has(.frontendColumn .passButton:active) .backendColumn .emptyIcon,
+.stepRow:has(.frontendColumn .passButton.animating) .backendColumn .emptyIcon {
   animation: iconPulse 0.8s ease-out 0.4s;
 }
 

@@ -24,7 +24,7 @@ export const DEFAULT_FE_SUBSCRIBE_CODE = `import { base } from '@base-org/accoun
 
 try {
   const subscription = await base.subscription.subscribe({
-    recurringCharge: ".1",
+    recurringCharge: "5",
     subscriptionOwner: "0xYourAppAddress",
     periodInDays: 30,
     testnet: true
@@ -40,7 +40,7 @@ export const SUBSCRIBE_FAST_TESTING_CODE = `import { base } from '@base-org/acco
 
 try {
   const subscription = await base.subscription.subscribe({
-    recurringCharge: "0.01",
+    recurringCharge: "5",
     subscriptionOwner: "0xYourAppAddress",
     periodInDays: 30,
     overridePeriodInSecondsForTestnet: 10,
@@ -89,7 +89,7 @@ export const DEFAULT_BE_CHARGE_CODE = `import { base } from '@base-org/account'
 try {
   const result = await base.subscription.charge({
     id: '0x...',
-    amount: "5.00",
+    amount: "1.00",
     testnet: true
   })
   
@@ -104,7 +104,7 @@ export const CHARGE_WITH_RECIPIENT_CODE = `import { base } from '@base-org/accou
 try {
   const result = await base.subscription.charge({
     id: '0x...',
-    amount: "5.00",
+    amount: "1.00",
     recipient: "0x...",
     testnet: true
   })
@@ -170,7 +170,7 @@ export const FE_SUBSCRIBE_TIPS = [
   'Get testnet USDC at <a href="https://faucet.circle.com/" target="_blank" rel="noopener noreferrer">https://faucet.circle.com/</a> - select "Base Sepolia"',
   'subscriptionOwner is your application\'s address that will control the subscription',
   'recurringCharge is the amount of USDC to charge per period (e.g., "10.50" = $10.50)',
-  'Optional: use overridePeriodInSecondsForTestnet (testnet only) for fast testing (e.g., 300 = 5 minutes)',
+  'Optional: use overridePeriodInSecondsForTestnet (testnet only) for fast testing (e.g., 10 = 10 second period)',
   'Optional: set requireBalance: false to skip balance check',
 ];
 

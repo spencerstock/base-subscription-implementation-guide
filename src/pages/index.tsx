@@ -156,11 +156,18 @@ try {
   }, [feSubscribeExecution.result]);
 
   // Pass subscription owner wallet to frontend
-  const handlePassWalletToFrontend = () => {
+  const handlePassWalletToFrontend = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (!subscriptionOwnerWallet) {
       alert('Enter a subscription owner wallet address first');
       return;
     }
+    
+    // Add animating class for full animation
+    const button = e.currentTarget;
+    button.classList.add(styles.animating);
+    setTimeout(() => {
+      button.classList.remove(styles.animating);
+    }, 800);
     
     setIsWalletSentToFrontend(true);
     const updatedCode = feSubscribeCode.replace(
@@ -171,11 +178,18 @@ try {
   };
 
   // Pass subscription ID to backend
-  const handlePassIdToBackend = () => {
+  const handlePassIdToBackend = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (!subscriptionId) {
       alert('Create a subscription first');
       return;
     }
+    
+    // Add animating class for full animation
+    const button = e.currentTarget;
+    button.classList.add(styles.animating);
+    setTimeout(() => {
+      button.classList.remove(styles.animating);
+    }, 800);
     
     setIsSubscriptionIdSentToBackend(true);
     
@@ -259,7 +273,7 @@ try {
               <svg className={styles.warningIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
               </svg>
-              <p>Create a <code>.env</code> file in your project root with the following variables:</p>
+              <p>This demo has credentials already provided. Your implementation will require the following environment variables:</p>
             </div>
 
             <pre className={styles.envCode}>{`CDP_API_KEY_ID=********-****-****-****-************
@@ -335,7 +349,22 @@ PAYMASTER_URL=https://api.developer.coinbase.com/rpc/v1/base/*******************
             <div className={`${styles.stepNumber} ${styles.backend}`}>0</div>
             <div className={styles.stepInfo}>
               <h3 className={styles.stepTitle}>Create or Get Backend Wallet</h3>
-              <p className={styles.stepDescription}>Backend creates wallet with <code>base.subscription.getOrCreateSubscriptionOwnerWallet</code></p>
+              <p className={styles.stepDescription}>
+                Backend creates wallet with <code>base.subscription.getOrCreateSubscriptionOwnerWallet</code>
+                {' '}
+                <a 
+                  href="https://docs.base.org/base-account/reference/base-pay/getOrCreateSubscriptionOwnerWallet" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  style={{ marginLeft: '4px', opacity: 0.7 }}
+                >
+                  <svg style={{ width: '14px', height: '14px', display: 'inline-block', verticalAlign: 'middle' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+                    <path d="M15 3h6v6"/>
+                    <path d="M10 14L21 3"/>
+                  </svg>
+                </a>
+              </p>
             </div>
           </div>
           
@@ -444,7 +473,22 @@ PAYMASTER_URL=https://api.developer.coinbase.com/rpc/v1/base/*******************
             <div className={`${styles.stepNumber} ${styles.frontend}`}>2</div>
             <div className={styles.stepInfo}>
               <h3 className={styles.stepTitle}>Request Subscription from User</h3>
-              <p className={styles.stepDescription}>User subscribes with <code>base.subscription.subscribe</code></p>
+              <p className={styles.stepDescription}>
+                User subscribes with <code>base.subscription.subscribe</code>
+                {' '}
+                <a 
+                  href="https://docs.base.org/base-account/reference/base-pay/subscribe" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  style={{ marginLeft: '4px', opacity: 0.7 }}
+                >
+                  <svg style={{ width: '14px', height: '14px', display: 'inline-block', verticalAlign: 'middle' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+                    <path d="M15 3h6v6"/>
+                    <path d="M10 14L21 3"/>
+                  </svg>
+                </a>
+              </p>
             </div>
           </div>
           
@@ -458,7 +502,7 @@ PAYMASTER_URL=https://api.developer.coinbase.com/rpc/v1/base/*******************
                   onChange={(e) => setSubscribePreset(e.target.value as 'default' | 'fast-testing' | 'no-balance-check')}
                 >
                   <option value="default">Basic Subscribe (30 days)</option>
-                  <option value="fast-testing">Fast Testing (5 minutes) ⚡</option>
+                  <option value="fast-testing">Fast Testing (10 seconds) </option>
                   <option value="no-balance-check">Skip Balance Check</option>
                 </select>
               </div>
@@ -493,7 +537,22 @@ PAYMASTER_URL=https://api.developer.coinbase.com/rpc/v1/base/*******************
             <div className={`${styles.stepNumber} ${styles.frontend}`}>3</div>
             <div className={styles.stepInfo}>
               <h3 className={styles.stepTitle}>Check Subscription Status</h3>
-              <p className={styles.stepDescription}>User checks status with <code>base.subscription.getStatus</code></p>
+              <p className={styles.stepDescription}>
+                User checks status with <code>base.subscription.getStatus</code>
+                {' '}
+                <a 
+                  href="https://docs.base.org/base-account/reference/base-pay/getStatus" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  style={{ marginLeft: '4px', opacity: 0.7 }}
+                >
+                  <svg style={{ width: '14px', height: '14px', display: 'inline-block', verticalAlign: 'middle' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+                    <path d="M15 3h6v6"/>
+                    <path d="M10 14L21 3"/>
+                  </svg>
+                </a>
+              </p>
             </div>
           </div>
           
@@ -589,7 +648,22 @@ PAYMASTER_URL=https://api.developer.coinbase.com/rpc/v1/base/*******************
             <div className={`${styles.stepNumber} ${styles.backend}`}>5</div>
             <div className={styles.stepInfo}>
               <h3 className={styles.stepTitle}>Charge Subscription</h3>
-              <p className={styles.stepDescription}>Backend charges with <code>base.subscription.charge</code></p>
+              <p className={styles.stepDescription}>
+                Backend charges with <code>base.subscription.charge</code>
+                {' '}
+                <a 
+                  href="https://docs.base.org/base-account/reference/base-pay/charge" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  style={{ marginLeft: '4px', opacity: 0.7 }}
+                >
+                  <svg style={{ width: '14px', height: '14px', display: 'inline-block', verticalAlign: 'middle' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+                    <path d="M15 3h6v6"/>
+                    <path d="M10 14L21 3"/>
+                  </svg>
+                </a>
+              </p>
             </div>
           </div>
           
@@ -607,7 +681,7 @@ PAYMASTER_URL=https://api.developer.coinbase.com/rpc/v1/base/*******************
                 >
                   <option value="default">Basic Charge</option>
                   <option value="with-recipient">With Recipient Address</option>
-                  <option value="max-remaining">Max Remaining Charge 💰</option>
+                  <option value="max-remaining">Max Remaining Charge </option>
                 </select>
               </div>
               <CodeEditor
@@ -627,6 +701,7 @@ PAYMASTER_URL=https://api.developer.coinbase.com/rpc/v1/base/*******************
                 error={beChargeExecution.error}
                 consoleOutput={beChargeExecution.consoleOutput}
                 isLoading={beChargeExecution.isLoading}
+                code={beChargeCode}
               />
             </div>
           </div>
@@ -638,7 +713,22 @@ PAYMASTER_URL=https://api.developer.coinbase.com/rpc/v1/base/*******************
             <div className={`${styles.stepNumber} ${styles.backend}`}>6</div>
             <div className={styles.stepInfo}>
               <h3 className={styles.stepTitle}>Verify Subscription Status</h3>
-              <p className={styles.stepDescription}>Backend verifies with <code>base.subscription.getStatus</code></p>
+              <p className={styles.stepDescription}>
+                Backend verifies with <code>base.subscription.getStatus</code>
+                {' '}
+                <a 
+                  href="https://docs.base.org/base-account/reference/base-pay/getStatus" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  style={{ marginLeft: '4px', opacity: 0.7 }}
+                >
+                  <svg style={{ width: '14px', height: '14px', display: 'inline-block', verticalAlign: 'middle' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+                    <path d="M15 3h6v6"/>
+                    <path d="M10 14L21 3"/>
+                  </svg>
+                </a>
+              </p>
             </div>
           </div>
           
@@ -674,7 +764,22 @@ PAYMASTER_URL=https://api.developer.coinbase.com/rpc/v1/base/*******************
             <div className={`${styles.stepNumber} ${styles.backend}`}>7</div>
             <div className={styles.stepInfo}>
               <h3 className={styles.stepTitle}>Revoke Subscription</h3>
-              <p className={styles.stepDescription}>Backend cancels with <code>base.subscription.revoke</code></p>
+              <p className={styles.stepDescription}>
+                Backend cancels with <code>base.subscription.revoke</code>
+                {' '}
+                <a 
+                  href="https://docs.base.org/base-account/reference/base-pay/revoke" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  style={{ marginLeft: '4px', opacity: 0.7 }}
+                >
+                  <svg style={{ width: '14px', height: '14px', display: 'inline-block', verticalAlign: 'middle' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+                    <path d="M15 3h6v6"/>
+                    <path d="M10 14L21 3"/>
+                  </svg>
+                </a>
+              </p>
             </div>
           </div>
           
@@ -699,6 +804,7 @@ PAYMASTER_URL=https://api.developer.coinbase.com/rpc/v1/base/*******************
                 error={beRevokeExecution.error}
                 consoleOutput={beRevokeExecution.consoleOutput}
                 isLoading={beRevokeExecution.isLoading}
+                code={beRevokeCode}
               />
             </div>
           </div>
